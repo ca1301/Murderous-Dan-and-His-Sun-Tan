@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Photon.Pun;
 using System;
 
 public class Pistol : Weapon
@@ -35,7 +34,6 @@ public class Pistol : Weapon
     {
         armsAnim.SetBool("Fire", true);
         StartCoroutine(EndFire(fireRate));
-        GetComponentInParent<PhotonView>().RPC("CreateMuzzleFlash", RpcTarget.Others, weaponId, tpMuzzle.position, tpMuzzle.rotation);
         var muz = Instantiate(muzzleFlash, fpMuzzle.position, fpMuzzle.rotation);
         AudioSource.PlayClipAtPoint(fireSound, fpMuzzle.position);
         Destroy(muz, 1);
@@ -43,7 +41,6 @@ public class Pistol : Weapon
         Vector3 origin = cam.transform.position + cam.transform.forward * 1;
         if(Physics.Raycast(origin, cam.transform.forward, out hit, range, shootableLayers))
         {
-            GetComponentInParent<PhotonView>().RPC("CreateTracer", RpcTarget.Others, weaponId, tpMuzzle.position, hit.point);
             var trace = Instantiate(tracer, fpMuzzle.position, fpMuzzle.rotation);
             trace.GetComponent<Tracer>().target = hit.point;
             trace.GetComponent<Tracer>().muzzle = fpMuzzle.position;
@@ -51,7 +48,6 @@ public class Pistol : Weapon
         }
         else
         {
-            GetComponentInParent<PhotonView>().RPC("CreateTracer", RpcTarget.Others, weaponId, tpMuzzle.position, cam.transform.forward * range);
             var trace = Instantiate(tracer, fpMuzzle.position, fpMuzzle.rotation);
             trace.GetComponent<Tracer>().target = cam.transform.forward * range;
             trace.GetComponent<Tracer>().muzzle = fpMuzzle.position;

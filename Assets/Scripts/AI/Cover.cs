@@ -17,10 +17,10 @@ public class Cover : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (GameObject.FindGameObjectWithTag("Player") != null && GameObject.FindGameObjectWithTag("Player").GetComponent<Player>().eyes != null)
-        {
-            player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>().eyes;
-        }
+       // if (GameObject.FindGameObjectWithTag("Player") != null && GameObject.FindGameObjectWithTag("Player").GetComponent<Player>().eyes != null)
+        //{
+          //  player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>().eyes;
+        //}
     }
 
     private void FixedUpdate()

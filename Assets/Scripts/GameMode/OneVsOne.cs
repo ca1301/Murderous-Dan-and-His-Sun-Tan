@@ -1,17 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using Photon.Realtime;
-using ExitGames.Client.Photon;
-using Photon.Pun;
-using UnityEngine.SceneManagement;
 using TMPro;
+using Mirror;
 
-public class OneVsOne : MonoBehaviourPunCallbacks
+public class OneVsOne : NetworkBehaviour
 {
 
     public static OneVsOne Instance = null;
+
     [Header("Player")]
     public GameObject playerOne;
     public GameObject playerTwo;
@@ -41,8 +38,7 @@ public class OneVsOne : MonoBehaviourPunCallbacks
     public TMP_Text gameOverText;
     public TMP_Text roundStatus;
     public TMP_Text roundTime;
-
-    // Start is called before the first frame update
+    
     void Awake()
     {
         Instance = this;
@@ -50,72 +46,19 @@ public class OneVsOne : MonoBehaviourPunCallbacks
         currentRound = 1;
     }
 
-    public override void OnEnable()
+    private void Update()
     {
-        PhotonNetwork.NetworkingClient.EventReceived += NetworkingClient_EventReceived;
-    }
-    public override void OnDisable()
-    {
-        PhotonNetwork.NetworkingClient.EventReceived -= NetworkingClient_EventReceived;
-    }
-
-    public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer)
-    {
-        CheckPlayersLoaded();
-    }
-
-    public override void OnJoinedRoom()
-    {
-        CheckPlayersLoaded();
-    }
-
-
-
-    void CheckPlayersLoaded()
-    {
-        Debug.Log(CheckAllPlayerLoadedLevel());
-    }
-
-    private void NetworkingClient_EventReceived(EventData obj)
-    {
-
-        if(obj.Code == OneVsOne_Settings.PLAYER_JOINED)
+        if(isServer)
         {
-            object[] info = (object[])obj.CustomData;
-            if(playerOne == null)
+           var players = FindObjectsOfType<NetworkPlayer>();
+            if (players.Length >= 1 && !gameStarted)
             {
-                PlayerJoinedTeam((string)info[0], 0);
-                roundStatus.text = "Waiting for players 1/2";
-            }
-            else
-            {
-                PlayerJoinedTeam((string)info[0], 1);
-                roundStatus.text = "Game about to start!!!";
                 StartGame();
             }
-        }
 
-        if (obj.Code == OneVsOne_Settings.PLAYER_DIED)
-        {
-            object[] info = (object[])obj.CustomData;
-            if((string)info[0] == playerOne.name)
-            {
-                EndRound(0);
-            }
-            else if((string)info[0] == playerTwo.name)
-            {
-                EndRound(1);
-            }
-            else if((string)info[0] == OneVsOne_Settings.TEAM_TIED)
-            {
-                EndRound(-1);
-            }
-            else
-            {
-                Debug.LogError("No Valid Team Found!!");
-            }
         }
     }
+
 
     void StartGame()
     {
@@ -123,26 +66,29 @@ public class OneVsOne : MonoBehaviourPunCallbacks
         StartCoroutine(PreGame());
     }
 
-    private bool CheckAllPlayerLoadedLevel()
+    [Command(ignoreAuthority = true)]
+    public void CmdGetCurrentGameState()
     {
-        foreach (Photon.Realtime.Player p in PhotonNetwork.PlayerList)
+        if (isServer)
         {
-            object playerLoadedLevel;
-
-            if (p.CustomProperties.TryGetValue(OneVsOne_Settings.PLAYER_LOADED_LEVEL, out playerLoadedLevel))
-            {
-                if ((bool)playerLoadedLevel)
-                {
-                    continue;
-                }
-            }
-
-            return false;
+            RpcGetCurrentGameState(gameStarted, currentRound, roundGoing);
         }
-
-        return true;
     }
 
+    [ClientRpc]
+    public void RpcGetCurrentGameState(bool gameStarted, int currentRound, bool roundGoing)
+    {
+        if(!isServer)
+        {
+            this.gameStarted = gameStarted;
+            this.currentRound = currentRound;
+            this.roundGoing = roundGoing;
+            if(gameStarted)
+            {
+                StartCoroutine(PreGame());
+            }
+        }
+    }
 
 
     private IEnumerator PreGame()
@@ -150,30 +96,6 @@ public class OneVsOne : MonoBehaviourPunCallbacks
         float timer = OneVsOne_Settings.PRE_GAME_TIME;
 
         //Reset player one for next round
-        object[] playerOneObj = new object[] { playerOne.name, playerOneSpawnPosition.transform.position, playerOneSpawnPosition.transform.rotation};
-        RaiseEventOptions raiseEventOptionsPlayerOne = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions sendOptionsPlayerOne = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_ROUND_RESET, playerOneObj, raiseEventOptionsPlayerOne, sendOptionsPlayerOne);
-
-        //Reset player one UI for next round
-        object[] playerOneUI = new object[] { playerOne.name, 0 };
-        RaiseEventOptions raiseEventOptionsPlayerOneUI = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions sendOptionsPlayerOneUI = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_SET_UI, playerOneUI, raiseEventOptionsPlayerOneUI, sendOptionsPlayerOneUI);
-
-        //Reset player two for next round
-        object[] playerTwoObj = new object[] { playerTwo.name, playerTwoSpawnPosition.transform.position, playerTwoSpawnPosition.transform.rotation };
-        RaiseEventOptions raiseEventOptionsPlayerTwo = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions sendOptionsPlayerTwo = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_ROUND_RESET, playerTwoObj, raiseEventOptionsPlayerTwo, sendOptionsPlayerTwo);
-
-        //Reset player two UI for next round
-        object[] playerTwoUI = new object[] { playerTwo.name, 1 };
-        RaiseEventOptions raiseEventOptionsPlayerTwoUI = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions sendOptionsPlayerTwoUI = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_SET_UI, playerTwoUI, raiseEventOptionsPlayerTwoUI, sendOptionsPlayerTwoUI);
-
-
 
 
         while (timer > 0.0f)
@@ -190,77 +112,15 @@ public class OneVsOne : MonoBehaviourPunCallbacks
         roundGoing = true;
         StartCoroutine(Round(currentRound));
 
-
-        object[] playerOneObject = new object[] { playerOne.name};
-        RaiseEventOptions playerOneOptions = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions playerOneSend = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.ROUND_READY, playerOneObject, playerOneOptions, playerOneSend);
-
-        object[] playerTwoObject = new object[] { playerTwo.name };
-        RaiseEventOptions playerTwoOptions = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions playerTwoSend = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.ROUND_READY, playerTwoObject, playerTwoOptions, playerTwoSend);
     }
 
 
-    public void PlayerJoinedTeam(string playerName, int team)
-    {
-        if (team == 0)
-        {
-            playerOne = GameObject.Find(playerName);
-            object[] playerOneObj = new object[] { playerName, team };
-            RaiseEventOptions raiseEventOptionsPlayerOne = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-            SendOptions sendOptionsPlayerOne = new SendOptions { Reliability = true };
-            PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_JOIN_TEAM, playerOneObj, raiseEventOptionsPlayerOne, sendOptionsPlayerOne);
-        }
-        else
-        {
-            playerTwo = GameObject.Find(playerName);
-            object[] playerOneObj = new object[] { playerName, team };
-            RaiseEventOptions raiseEventOptionsPlayerOne = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-            SendOptions sendOptionsPlayerOne = new SendOptions { Reliability = true };
-            PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_JOIN_TEAM, playerOneObj, raiseEventOptionsPlayerOne, sendOptionsPlayerOne);
-        }
-    }
+    
 
-
-    public void EndRound(int winningTeam)
-    {
-        //Check all win cases for the end of the round
-        if(winningTeam == 0)
-        {
-            teamTwoRoundsWon += 1;
-            blueTeamScore.text = teamTwoRoundsWon.ToString();
-            StopAllCoroutines();
-            roundGoing = false;
-            currentRound += 1;
-            StartCoroutine(Intermission());
-        }
-        else if(winningTeam == 1)
-        {
-            teamOneRoundsWon += 1;
-            redTeamScore.text = teamOneRoundsWon.ToString();
-            StopAllCoroutines();
-            roundGoing = false;
-            currentRound += 1;
-            StartCoroutine(Intermission());
-            
-        }
-        else if (winningTeam == -1)
-        {
-            Debug.Log("Draw!!");
-            StopAllCoroutines();
-            roundGoing = false;
-            currentRound += 1;
-            StartCoroutine(Intermission());
-        }
-    }
 
     private IEnumerator Round(int round)
     {
         float timer = OneVsOne_Settings.ROUND_TIME;
-        // swatPlayersAlive = swat.Count;
-        // terroristPlayersAlive = terrorists.Count;
         roundStatus.text = "Round: " + currentRound;
         while (timer > 0.0f && roundGoing)
         {
@@ -289,10 +149,7 @@ public class OneVsOne : MonoBehaviourPunCallbacks
         }
         else
         {
-            object[] content = new object[] { OneVsOne_Settings.TEAM_TIED };
-            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-            SendOptions sendOptions = new SendOptions { Reliability = true };
-            PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_DIED, content, raiseEventOptions, sendOptions);
+          
         }
 
     }
@@ -301,16 +158,7 @@ public class OneVsOne : MonoBehaviourPunCallbacks
     {
         float timer = OneVsOne_Settings.INTERMISSION_TIME;
 
-        object[] playerOneObj = new object[] { playerOne.name, playerOneSpawnPosition.transform.position, playerOneSpawnPosition.transform.rotation };
-        RaiseEventOptions raiseEventOptionsPlayerOne = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions sendOptionsPlayerOne = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_ROUND_RESET, playerOneObj, raiseEventOptionsPlayerOne, sendOptionsPlayerOne);
-
-
-        object[] playerTwoObj = new object[] { playerTwo.name, playerTwoSpawnPosition.transform.position, playerTwoSpawnPosition.transform.rotation };
-        RaiseEventOptions raiseEventOptionsPlayerTwo = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions sendOptionsPlayerTwo = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_ROUND_RESET, playerTwoObj, raiseEventOptionsPlayerTwo, sendOptionsPlayerTwo);
+     
 
 
 
@@ -329,16 +177,7 @@ public class OneVsOne : MonoBehaviourPunCallbacks
         //SetupPositions();
         StartCoroutine(Round(currentRound));
 
-        object[] playerOneObject = new object[] { playerOne.name };
-        RaiseEventOptions playerOneEvent = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions playerOneSend = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.ROUND_READY, playerOneObject, playerOneEvent, playerOneSend);
-
-        object[] playerTwoObject = new object[] { playerTwo.name };
-        RaiseEventOptions playerTwoEvent = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions playerTwoSend = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.ROUND_READY, playerTwoObject, playerTwoEvent, playerTwoSend);
-
+      
     }
 
     IEnumerator GameEnd(int winningTeam)
@@ -356,7 +195,7 @@ public class OneVsOne : MonoBehaviourPunCallbacks
         }
         Cursor.lockState = CursorLockMode.None;
         yield return new WaitForSeconds(3);
-        PhotonNetwork.LoadLevel(0);
+
     }
 
 }

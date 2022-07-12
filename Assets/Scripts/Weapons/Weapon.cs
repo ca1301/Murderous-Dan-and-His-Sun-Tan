@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Photon.Pun;
 
 public class Weapon : MonoBehaviour
 {
@@ -20,23 +19,18 @@ public class Weapon : MonoBehaviour
     {
         if (hit.tag == "Head")
         {
-            hit.GetComponentInParent<PhotonView>().RPC("ApplyDamage", RpcTarget.All, headDamage);
         }
         if (hit.tag == "Body")
         {
-            hit.GetComponentInParent<PhotonView>().RPC("ApplyDamage", RpcTarget.All, bodyDamage);
         }
         if (hit.tag == "Arm")
         {
-            hit.GetComponentInParent<PhotonView>().RPC("ApplyDamage", RpcTarget.All, armDamage);
         }
         if (hit.tag == "Leg")
         {
-            hit.GetComponentInParent<PhotonView>().RPC("ApplyDamage", RpcTarget.All, legDamage);
         }
         if(hit.gameObject.CompareTag("Hat"))
-        {
-            hit.GetComponent<PhotonView>().RPC("OnFallOff", RpcTarget.All);
+        { 
         }
     }
 

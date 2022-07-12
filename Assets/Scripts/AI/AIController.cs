@@ -2,16 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using Photon.Pun;
-using Photon.Realtime;
-using ExitGames.Client.Photon;
 
-public class AIController : MonoBehaviourPunCallbacks
+public class AIController : MonoBehaviour
 {
     private Animator anim;
     private NavMeshAgent nma;
     public Cover[] covers;
-    private PhotonView pv;
     public float health;
     public bool isDead;
     public int team;
@@ -35,35 +31,19 @@ public class AIController : MonoBehaviourPunCallbacks
         nma = GetComponent<NavMeshAgent>();
         anim = GetComponent<Animator>();
         covers = FindObjectsOfType<Cover>();
-        pv = GetComponent<PhotonView>();
 
         this.gameObject.name = "AI: " + Random.Range(0, 100);
-        object[] content = new object[] { this.gameObject.name};
-        RaiseEventOptions raiseEventOptions = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-        SendOptions sendOptions = new SendOptions { Reliability = true };
-        PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_JOINED, content, raiseEventOptions, sendOptions);
+   
 
         ammo = magazineSize;
 
-        var player = FindObjectOfType<Player>();
-        if (player != null)
-        {
-            this.player = player.transform;
-        }
     }
 
-    public override void OnEnable()
-    {
-        PhotonNetwork.NetworkingClient.EventReceived += OnEvent;
-    }
-    public override void OnDisable()
-    {
-        PhotonNetwork.NetworkingClient.EventReceived -= OnEvent;
-    }
+
 
     private void Update()
     {
-        Vector3 playerPosition = player.GetComponentInParent<Player>().eyes.position;
+        Vector3 playerPosition = Vector3.zero;//player.GetComponentInParent<Player>().eyes.position;
         Vector3 position = head.transform.position + head.transform.forward * 0.5f;
         anim.SetFloat("Vertical", nma.velocity.magnitude);
         if (Physics.Linecast(position, playerPosition))
@@ -145,151 +125,21 @@ public class AIController : MonoBehaviourPunCallbacks
 
 
 
-    [PunRPC]
     public void Suicide()
     {
         health = 0;
-        Die();
-        isDead = true;
     }
 
 
-    [PunRPC]
     public void ApplyDamage(float damage)
     {
         health -= damage;
 
-        if (health <= 0 && !isDead)
+        if (health <= 0)
         {
-            Die();
-            isDead = true;
+
         }
     }
-
-    public void Die()
-    {
-        if (pv.IsMine)
-        {
-            object[] content = new object[] { gameObject.name };
-            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-            SendOptions sendOptions = new SendOptions { Reliability = true };
-            PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_DIED, content, raiseEventOptions, sendOptions);
-
-            GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-            foreach (var item in players)
-            {
-                if (item.gameObject != this.gameObject)
-                {
-                    item.GetComponent<PhotonView>().RPC("AddHat", RpcTarget.All);
-                }
-            }
-        }
-    }
-
-
-
-
-    private void OnEvent(EventData obj)
-    {
-        if (obj.Code == OneVsOne_Settings.GAME_START)
-        {
-            object[] info = (object[])obj.CustomData;
-            health = 100;
-        }
-
-        if (obj.Code == OneVsOne_Settings.PLAYER_DIED)
-        {
-            object[] info = (object[])obj.CustomData;
-            health = 100;
-            nma.enabled = false;
-        }
-
-        if (obj.Code == OneVsOne_Settings.PLAYER_JOINED)
-        {
-            object[] info = (object[])obj.CustomData;
-            if ((string)info[0] == this.gameObject.name)
-            {
-                object[] content = new object[] { this.gameObject.name };
-                RaiseEventOptions raiseEventOptions = new RaiseEventOptions { CachingOption = EventCaching.AddToRoomCache, Receivers = ReceiverGroup.All };
-                SendOptions sendOptions = new SendOptions { Reliability = true };
-                PhotonNetwork.RaiseEvent(OneVsOne_Settings.PLAYER_JOIN_TEAM, content, raiseEventOptions, sendOptions);
-            }
-        }
-
-        if (obj.Code == OneVsOne_Settings.PLAYER_SET_UI)
-        {
-            object[] info = (object[])obj.CustomData;
-            if ((string)info[0] == this.gameObject.name)
-            {
-                if ((int)info[1] == 0)
-                {
-                    //health_Text.color = Color.red;
-                }
-                else
-                {
-                    //health_Text.color = Color.blue;
-                }
-            }
-        }
-        if (obj.Code == OneVsOne_Settings.PLAYER_ROUND_RESET)
-        {
-            object[] info = (object[])obj.CustomData;
-            health = 100;
-            nma.enabled = false;
-            if ((string)info[0] == this.gameObject.name)
-            {
-                isDead = false;
-                this.transform.position = (Vector3)info[1];
-                this.transform.rotation = (Quaternion)info[2];
-                /*
-                foreach (SkinnedMeshRenderer item in netPlayer.hideInFirstPerson)
-                {
-                    item.enabled = true;
-                }
-                if (pv.IsMine)
-                {
-                    GetComponent<PlayerController>().enabled = false;
-                    GetComponent<CharacterController>().enabled = false;
-                    camLook.enabled = false;
-                    foreach (var item in behavioursToDisableOnRoundEnd)
-                    {
-                        item.enabled = false;
-                    }
-                }
-                */
-            }
-
-        }
-
-        if (obj.Code == OneVsOne_Settings.ROUND_READY)
-        {
-            object[] info = (object[])obj.CustomData;
-            if ((string)info[0] == this.gameObject.name)
-            {
-                isDead = false;
-                /*
-                if (pv.IsMine)
-                {
-                    GetComponent<PlayerController>().enabled = true;
-                    GetComponent<CharacterController>().enabled = true;
-                    camLook.enabled = true;
-                    foreach (var item in behavioursToDisableOnRoundEnd)
-                    {
-                        item.enabled = true;
-                    }
-              
-                    pv.RPC("RPC_SHOWBODY", RpcTarget.Others);
-                }
-                 */
-                nma.enabled = true;
-                nma.SetDestination(player.transform.position);
-                
-            }
-
-        }
-
-    }
-
-
-
 }
+  
+

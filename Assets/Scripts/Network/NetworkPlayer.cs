@@ -1,20 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Photon.Pun;
-using ExitGames.Client.Photon;
 using TMPro;
-using Photon.Realtime;
-using Photon.Pun.UtilityScripts;
-using Hashtable = ExitGames.Client.Photon.Hashtable;
-
-public class NetworkPlayer : MonoBehaviourPunCallbacks, IPunObservable
+using Mirror;
+public class NetworkPlayer : NetworkBehaviour
 {
-
     public Behaviour[] behavioursToEnable;
     public GameObject fp;
-
-    private PhotonView pv;
 
     private Vector3 realPosition;
     private Quaternion realRotation;
@@ -36,8 +28,8 @@ public class NetworkPlayer : MonoBehaviourPunCallbacks, IPunObservable
 
     void Start()
     {
-        pv = GetComponent<PhotonView>();
-        if(pv.IsMine)
+        
+        if(netIdentity.isLocalPlayer)
         {
             foreach (var item in hideInFirstPerson)
             {
@@ -56,6 +48,10 @@ public class NetworkPlayer : MonoBehaviourPunCallbacks, IPunObservable
                 item.enabled = false;
             }
             fp.SetActive(true);
+            if(!isServer)
+            {
+                OneVsOne.Instance.CmdGetCurrentGameState();
+            }
         }
         
     }
@@ -64,46 +60,58 @@ public class NetworkPlayer : MonoBehaviourPunCallbacks, IPunObservable
     {
         spine.rotation = cam.rotation;
         spine.rotation = spine.rotation * Quaternion.Euler(offset);
-        if(!pv.IsMine)
+        if(!isLocalPlayer)
         {
-            cam.rotation = Quaternion.Slerp(cam.rotation, netCamRotation, 0.1f);
-
+            cam.rotation = Quaternion.Slerp(cam.rotation, netCamRotation, 0.9f);
             spine.rotation = cam.rotation;
             spine.rotation = spine.rotation * Quaternion.Euler(offset);
         }
+        
     }
 
-
-    void IPunObservable.OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
-    {
-        if(stream.IsWriting)
+    
+   void Update()
+   {
+        if (isLocalPlayer)
         {
-            stream.SendNext(this.transform.position);
-            stream.SendNext(this.transform.rotation);
-            stream.SendNext(anim.GetFloat("Vertical"));
-            stream.SendNext(anim.GetFloat("Horizontal"));
-            stream.SendNext(anim.GetBool("Jump"));
-            stream.SendNext(anim.GetBool("Crouching"));
-            stream.SendNext(cam.rotation);
+            if(isServer)
+            {
+                RpcSendData(transform.position, transform.rotation, anim.GetFloat("Vertical"), anim.GetFloat("Horizontal"), anim.GetBool("Jump"), anim.GetBool("Crouching"), cam.rotation);
+            }
+            else
+            {
+                CmdSendData(transform.position, transform.rotation, anim.GetFloat("Vertical"), anim.GetFloat("Horizontal"), anim.GetBool("Jump"), anim.GetBool("Crouching"), cam.rotation);
+            }
         }
-        else
+    }
+
+    [Command]
+    public void CmdSendData(Vector3 position, Quaternion rotation, float vertical, float horizontal, bool jump, bool crouch, Quaternion camRotation)
+    {
+        RpcSendData(position, rotation, vertical, horizontal, jump, crouch, camRotation);
+    }
+
+    [ClientRpc]
+    public void RpcSendData(Vector3 position, Quaternion rotation, float vertical, float horizontal, bool jump, bool crouch, Quaternion camRotation)
+    {
+        if(!isLocalPlayer)
         {
-            realPosition = (Vector3)stream.ReceiveNext();
-            realRotation = (Quaternion)stream.ReceiveNext();
-            anim.SetFloat("Vertical", (float)stream.ReceiveNext());
-            anim.SetFloat("Horizontal", (float)stream.ReceiveNext());
-            anim.SetBool("Jump", (bool)stream.ReceiveNext());
-            anim.SetBool("Crouching", (bool)stream.ReceiveNext());
-            netCamRotation = (Quaternion)stream.ReceiveNext();
+            realPosition = position;
+            realRotation = rotation;
+            anim.SetFloat("Vertical", vertical);
+            anim.SetFloat("Horizontal", horizontal);
+            anim.SetBool("Jump", jump);
+            anim.SetBool("Crouching", crouch);
+            netCamRotation = camRotation;
         }
     }
 
     void FixedUpdate()
     {
-        if(!pv.IsMine)
+        if(!isLocalPlayer)
         {
-            this.transform.position = Vector3.Slerp(this.transform.position, realPosition, 0.1f);
-            this.transform.rotation = Quaternion.Slerp(this.transform.rotation, realRotation, 0.1f);
+            this.transform.position = Vector3.Lerp(this.transform.position, realPosition, 0.7f);
+            this.transform.rotation = Quaternion.Lerp(this.transform.rotation, realRotation, 0.7f);
         }
         
     }

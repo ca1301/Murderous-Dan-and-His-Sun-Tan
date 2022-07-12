@@ -1,59 +1,32 @@
 ﻿using UnityEngine;
-using Photon.Pun;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
     public Animator anim;
-    [Tooltip("How fast the player moves when walking (default move speed).")]
-    [SerializeField]
     private float m_WalkSpeed = 6.0f;
 
-    [Tooltip("How fast the player moves when running.")]
-    [SerializeField]
     private float m_RunSpeed = 11.0f;
 
-    [Tooltip("If true, diagonal speed (when strafing + moving forward or back) can't exceed normal move speed; otherwise it's about 1.4 times faster.")]
-    [SerializeField]
     public bool m_LimitDiagonalSpeed = true;
 
-    [Tooltip("If checked, the run key toggles between running and walking. Otherwise player runs if the key is held down.")]
-    [SerializeField]
     private bool m_ToggleRun = false;
 
-    [Tooltip("How high the player jumps when hitting the jump button.")]
-    [SerializeField]
     private float m_JumpSpeed = 8.0f;
 
-    [Tooltip("How fast the player falls when not standing on anything.")]
-    [SerializeField]
     private float m_Gravity = 20.0f;
 
-    [Tooltip("Units that player can fall before a falling function is run. To disable, type \"infinity\" in the inspector.")]
-    [SerializeField]
     private float m_FallingThreshold = 10.0f;
 
-    [Tooltip("If the player ends up on a slope which is at least the Slope Limit as set on the character controller, then he will slide down.")]
-    [SerializeField]
     private bool m_SlideWhenOverSlopeLimit = false;
 
-    [Tooltip("If checked and the player is on an object tagged \"Slide\", he will slide down it regardless of the slope limit.")]
-    [SerializeField]
     private bool m_SlideOnTaggedObjects = false;
 
-    [Tooltip("How fast the player slides when on slopes as defined above.")]
-    [SerializeField]
     private float m_SlideSpeed = 12.0f;
 
-    [Tooltip("If checked, then the player can change direction while in the air.")]
-    [SerializeField]
     private bool m_AirControl = false;
 
-    [Tooltip("Small amounts of this results in bumping when walking down slopes, but large amounts results in falling too fast.")]
-    [SerializeField]
     private float m_AntiBumpFactor = .75f;
 
-    [Tooltip("Player must be grounded for at least this many physics frames before being able to jump again; set to 0 to allow bunny hopping.")]
-    [SerializeField]
     private int m_AntiBunnyHopFactor = 1;
 
     bool m_Crouching;
@@ -109,7 +82,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    [PunRPC]
     public void PlayFootStepSound(Vector3 position)
     {
         AudioSource.PlayClipAtPoint(footStepSound, position);
@@ -135,7 +107,6 @@ public class PlayerController : MonoBehaviour
             if (Vector3.Distance(this.transform.position, lastPosition) > footStepDistance)
             {
                 lastPosition = this.transform.position;
-                GetComponent<PhotonView>().RPC("PlayFootStepSound", RpcTarget.All, this.transform.position);
             }
             bool sliding = false;
             // See if surface immediately below should be slid down. We use this normally rather than a ControllerColliderHit point,
@@ -235,7 +206,6 @@ public class PlayerController : MonoBehaviour
         
         if (hit.transform.tag == "Kill")
         {
-            GetComponent<PhotonView>().RPC("Suicide", RpcTarget.All);
         }
     }
 
