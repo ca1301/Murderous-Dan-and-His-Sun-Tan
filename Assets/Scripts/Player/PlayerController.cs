@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-[RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
     public Animator anim;

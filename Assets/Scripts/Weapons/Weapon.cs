@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
 
-public class Weapon : MonoBehaviour
+public class Weapon : NetworkBehaviour
 {
     public string weaponName;
     public float damage;
@@ -17,21 +18,28 @@ public class Weapon : MonoBehaviour
 
     public void ApplyDamage(Transform hit)
     {
-        if (hit.tag == "Head")
-        {
-        }
-        if (hit.tag == "Body")
-        {
-        }
-        if (hit.tag == "Arm")
-        {
-        }
-        if (hit.tag == "Leg")
-        {
-        }
-        if(hit.gameObject.CompareTag("Hat"))
-        { 
-        }
+
+            if (hit.CompareTag("Head"))
+            {
+                hit.GetComponentInParent<NetworkPlayer>().CmdApplyDamage(headDamage);
+            }
+            if (hit.CompareTag("Body"))
+            {
+                hit.GetComponentInParent<NetworkPlayer>().CmdApplyDamage(bodyDamage);
+            }
+            if (hit.CompareTag("Arm"))
+            {
+                hit.GetComponentInParent<NetworkPlayer>().CmdApplyDamage(armDamage);
+            }
+            if (hit.CompareTag("Leg"))
+            {
+                hit.GetComponentInParent<NetworkPlayer>().CmdApplyDamage(legDamage);
+            }
+            if (hit.gameObject.CompareTag("Hat"))
+            {
+
+            }
+       
     }
 
 

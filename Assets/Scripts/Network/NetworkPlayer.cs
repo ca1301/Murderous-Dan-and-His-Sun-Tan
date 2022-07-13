@@ -26,6 +26,7 @@ public class NetworkPlayer : NetworkBehaviour
 
     Quaternion netCamRotation;
 
+    public float health = 100;
     void Start()
     {
         
@@ -50,7 +51,7 @@ public class NetworkPlayer : NetworkBehaviour
             fp.SetActive(true);
             if(!isServer)
             {
-                OneVsOne.Instance.CmdGetCurrentGameState();
+                GameManager.Instance.CmdGetCurrentGameState();
             }
         }
         
@@ -68,7 +69,20 @@ public class NetworkPlayer : NetworkBehaviour
         }
         
     }
+    [Command(ignoreAuthority = true)]
+    public void CmdApplyDamage(float amount)
+    {
+        RpcApplyDamage(amount);
+    }
+    [ClientRpc]
+    public void RpcApplyDamage(float amount)
+    {
+        health -= amount;
+        if(health <= 0)
+        {
 
+        }
+    }
     
    void Update()
    {
