@@ -5,16 +5,34 @@ using Mirror;
 
 public class Weapon : NetworkBehaviour
 {
+    public Camera cam;
+    public LayerMask shootableLayers;
+
+    [Header("Weapon Stats")]
+    public int weaponId;
     public string weaponName;
-    public float damage;
+
+    public int bullets;
     public float range;
-    public Animator armsAnim;
-    public Animator weaponAnim;
 
     public float headDamage = 100;
     public float bodyDamage = 50;
     public float legDamage = 20;
     public float armDamage = 10;
+
+
+    [Header("Weapon Effects")]
+    public GameObject muzzleFlash;
+    public Transform fpMuzzle;
+    public AudioClip fireSound;
+
+
+    [Header("Third Person")]
+    public Transform tpMuzzle;
+    public Transform thirdPersonWeapon;
+    public Transform leftHandTransform;
+    public Transform rightHandTransform;
+
 
     public void ApplyDamage(Transform hit)
     {
@@ -35,22 +53,10 @@ public class Weapon : NetworkBehaviour
             {
                 hit.GetComponentInParent<NetworkPlayer>().CmdApplyDamage(legDamage);
             }
-            if (hit.gameObject.CompareTag("Hat"))
-            {
-
-            }
-       
     }
 
-
-
-    public IEnumerator EndFire(float fireRate)
+    public virtual void Update()
     {
-        yield return new WaitForSeconds(fireRate);
-        armsAnim.SetBool("Fire", false);
-    }
-    public IEnumerator EndReload(float reloadTime)
-    {
-        yield return new WaitForSeconds(reloadTime);
+        thirdPersonWeapon.transform.LookAt(cam.transform.forward * range);
     }
 }

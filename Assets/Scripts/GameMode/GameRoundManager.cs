@@ -4,46 +4,53 @@ using UnityEngine;
 using Mirror;
 public class GameRoundManager : MonoBehaviour
 {
-    public int currentRound;
-    GameManager gameManager;
 
-    private void Start()
-    {
-        gameManager = GetComponent<GameManager>();
-    }
+    [Tooltip("Intermission time (in seconds)")]
+    [SerializeField]
+    private float intermissionTime = 2;
+
+    [Tooltip("Round time (in seconds)")]
+    [SerializeField]
+    private float roundTime = 1000;
+
+
+
+
+
     public IEnumerator PreGame(double roundStartTime)
     {
-        float timer = 5;
+        GameManager.Instance.DisablePlayers();
+        float timer = intermissionTime;
         var difference = NetworkTime.time - roundStartTime;
         timer = timer - (float)difference;
-        gameManager.roundStatus.text = "Round about to start";
+        GameManager.Instance.roundStatus.text = "Round about to start";
         while (timer > 0.0f)
         {
             double minutes = (int)timer / 60;
             double seconds = (int)timer % 60;
-            gameManager.roundTime.text = minutes.ToString() + " : " + seconds.ToString();
+            GameManager.Instance.roundTime.text = minutes.ToString() + " : " + seconds.ToString();
             yield return new WaitForEndOfFrame();
 
             timer -= Time.deltaTime;
         }
-
-        gameManager.RoundStart();
+        GameManager.Instance.RoundStart();
     }
 
     public IEnumerator Round(int round, double roundStartTime)
     {
-        float timer = 30;
+        GameManager.Instance.EnablePlayers();
+        float timer = roundTime;
         var difference = NetworkTime.time - roundStartTime;
         timer = timer - (float)difference;
-        gameManager.roundStatus.text = "Round: " + round;
+        GameManager.Instance.roundStatus.text = "Round: " + round;
         while (timer > 0.0f)
         {
             double minutes = (int)timer / 60;
             double seconds = (int)timer % 60;
-            gameManager.roundTime.text = minutes.ToString() + " : " + seconds.ToString();
+            GameManager.Instance.roundTime.text = minutes.ToString() + " : " + seconds.ToString();
             yield return new WaitForEndOfFrame();
             timer -= Time.deltaTime;
         }
-        gameManager.RoundEnd();
+        GameManager.Instance.RoundEnd();
     }
 }

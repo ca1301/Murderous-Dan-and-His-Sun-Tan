@@ -5,32 +5,23 @@ using UnityEngine;
 public class Tracer : MonoBehaviour
 {
     public Vector3 target;
-    public Vector3 muzzle;
     public float trailSpeed;
-    public AudioSource tracerSound;
+    public AudioClip tracerSound;
+
     private void Start()
     {
-        var speed = Vector3.Distance(muzzle, target);
-        trailSpeed = trailSpeed / speed;
-        StartCoroutine(CreateTracer(trailSpeed, muzzle, target));
+        AudioSource.PlayClipAtPoint(tracerSound, transform.position);
     }
-
-
-    IEnumerator CreateTracer(float speed, Vector3 Muzzle, Vector3 HitPoint)
+    private void Update()
     {
-        var lineRenderer = this.GetComponent<LineRenderer>();
-        lineRenderer.SetPosition(0, Muzzle);
-        lineRenderer.SetPosition(1, Muzzle);
-        float fraction = 0;
-        while (fraction < 1f)
+        transform.position = Vector3.MoveTowards(this.transform.position, target, trailSpeed * Time.deltaTime);
+        
+        if(transform.position == target)
         {
-            fraction += speed;
-            yield return new WaitForSeconds(0.01f);
-            lineRenderer.SetPosition(1, Vector3.Lerp(lineRenderer.GetPosition(1), HitPoint, fraction));
-            this.transform.position = lineRenderer.GetPosition(0);
-            lineRenderer.SetPosition(0, Vector3.Lerp(lineRenderer.GetPosition(0), HitPoint, fraction / 1.1f));
+            Destroy(this.gameObject);
         }
-        Destroy(this.gameObject);
+        
     }
+
 }
 

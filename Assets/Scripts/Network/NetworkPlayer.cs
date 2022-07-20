@@ -7,11 +7,7 @@ public class NetworkPlayer : NetworkBehaviour
 {
     public Behaviour[] behavioursToEnable;
     public GameObject fp;
-
-    private Vector3 realPosition;
-    private Quaternion realRotation;
-
-
+    public float health = 100;
     public Animator anim;
 
     public Transform spine;
@@ -24,9 +20,13 @@ public class NetworkPlayer : NetworkBehaviour
 
     public CameraLook camLook;
 
-    Quaternion netCamRotation;
+    private Quaternion netCamRotation;
+    private Vector3 realPosition;
+    private Quaternion realRotation;
+    private int team;
 
-    public float health = 100;
+
+   
     void Start()
     {
         
@@ -48,7 +48,9 @@ public class NetworkPlayer : NetworkBehaviour
             {
                 item.enabled = false;
             }
+
             fp.SetActive(true);
+
             if(!isServer)
             {
                 GameManager.Instance.CmdGetCurrentGameState();
@@ -61,6 +63,7 @@ public class NetworkPlayer : NetworkBehaviour
     {
         spine.rotation = cam.rotation;
         spine.rotation = spine.rotation * Quaternion.Euler(offset);
+
         if(!isLocalPlayer)
         {
             cam.rotation = Quaternion.Slerp(cam.rotation, netCamRotation, 0.9f);
@@ -80,8 +83,14 @@ public class NetworkPlayer : NetworkBehaviour
         health -= amount;
         if(health <= 0)
         {
-
+            ResetPlayer();
         }
+    }
+
+    [ClientRpc]
+    public void RpcSetTeam(int teamID)
+    {
+        this.team = teamID;
     }
     
    void Update()
@@ -95,6 +104,105 @@ public class NetworkPlayer : NetworkBehaviour
             else
             {
                 CmdSendData(transform.position, transform.rotation, anim.GetFloat("Vertical"), anim.GetFloat("Horizontal"), anim.GetBool("Jump"), anim.GetBool("Crouching"), cam.rotation);
+            }
+        }
+    }
+
+    [ClientRpc]
+   public  void RpcDisablePlayer(Vector3 position, Quaternion rotation)
+    {
+        GetComponent<CharacterController>().transform.position = position;
+        GetComponent<CharacterController>().transform.rotation = rotation;
+        DisablePlayer();
+    }
+
+    [ClientRpc]
+    public void RpcEnablePlayer()
+    {
+        EnablePlayer();
+    }
+
+    public void DisablePlayer()
+    {
+        if (isLocalPlayer)
+        {
+            foreach (var item in behavioursToEnable)
+            {
+                item.enabled = false;
+            }
+            //fp.SetActive(false);
+        }
+        else
+        {
+            //Turn off the mesh
+            foreach (var item in hideInFirstPersonMesh)
+            {
+                item.enabled = false;
+            }
+            foreach (var item in hideInFirstPerson)
+            {
+                item.enabled = false;
+            }
+            foreach (var item in hitBoxes)
+            {
+                item.enabled = false;
+            }
+        }
+    }
+
+    public void ResetPlayer()
+    {
+        if (isLocalPlayer)
+        {
+            GameManager.Instance.CmdPlayerDied(netIdentity, team);
+            foreach (var item in behavioursToEnable)
+            {
+                item.enabled = false;
+            }
+            //fp.SetActive(false);
+        }
+        else
+        {
+            //Turn off the mesh
+            foreach (var item in hideInFirstPersonMesh)
+            {
+                item.enabled = false;
+            }
+            foreach (var item in hideInFirstPerson)
+            {
+                item.enabled = false;
+            }
+            foreach (var item in hitBoxes)
+            {
+                item.enabled = false;
+            }
+        }
+    }
+
+    public void EnablePlayer()
+    {
+        health = 100;
+        if (isLocalPlayer)
+        {
+            foreach (var item in behavioursToEnable)
+            {
+                item.enabled = true;
+            }
+            //fp.SetActive(true);
+        }
+        else
+        {
+            foreach (var item in hideInFirstPersonMesh)
+            {
+                item.enabled = true;
+            }
+            foreach (var item in hitBoxes)
+            {
+                item.enabled = true;
+            }
+            foreach (var item in hideInFirstPerson)
+            {
+                item.enabled = true;
             }
         }
     }

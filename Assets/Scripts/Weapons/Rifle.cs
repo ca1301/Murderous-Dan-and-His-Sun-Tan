@@ -1,17 +1,19 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
 
-public class Pistol : Weapon
+public class Rifle : Weapon
 {
     public GameObject tracer;
+    public float fireRate = 0.1f;
+    private float lastBullet;
 
     public override void Update()
     {
         base.Update();
-        if (Input.GetMouseButtonDown(0) && bullets > 0)
-        { 
+        if (Input.GetMouseButton(0) && Time.time > fireRate + lastBullet && bullets > 0)
+        {
+            lastBullet = Time.time + fireRate;
             Shoot();
         }
     }
@@ -21,7 +23,7 @@ public class Pistol : Weapon
         var muz = Instantiate(muzzleFlash, fpMuzzle.position, fpMuzzle.rotation);
         AudioSource.PlayClipAtPoint(fireSound, fpMuzzle.position);
         Destroy(muz, 1);
-       
+
         Vector3 origin = cam.transform.position + cam.transform.forward * 1;
         Vector3 hitPoint = Vector3.zero;
 

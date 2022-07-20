@@ -1,28 +1,30 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
 
-public class NetworkWeapon : MonoBehaviour
+public class NetworkWeapon : NetworkBehaviour
 {
     public NetMuzzleFlash[] netMuzzleFlashes;
-
-
-    public void CreateMuzzleFlash(int id, Vector3 position, Quaternion rotation)
+    [Command(ignoreAuthority = true)]
+    public void CmdShootWeapon(int id, Vector3 position, Quaternion rotation, Vector3 hitPoint)
     {
-        var muz = Instantiate(netMuzzleFlashes[id].muzzleFlash, position, rotation);
-        Destroy(muz, 1);
-        AudioSource.PlayClipAtPoint(netMuzzleFlashes[id].fireSound, position);
+        RpcShootWeapon(id, position, rotation, hitPoint); 
+    }
+    [ClientRpc]
+    public void RpcShootWeapon(int id, Vector3 position, Quaternion rotation, Vector3 hitPoint)
+    {
+        if(!isLocalPlayer)
+        {
+            var muz = Instantiate(netMuzzleFlashes[id].muzzleFlash, position, rotation);
+            Destroy(muz, 1);
+            AudioSource.PlayClipAtPoint(netMuzzleFlashes[id].fireSound, position);
+
+            var tracer = Instantiate(netMuzzleFlashes[id].tracer, position, rotation).GetComponent<Tracer>();
+            tracer.target = hitPoint;
+        }
     }
 
-    public void CreateTracer(int id, Vector3 position, Vector3 hitPoint)
-    {
-        var muz = Instantiate(netMuzzleFlashes[id].tracer, position, Quaternion.identity);
-        Destroy(muz, 1);
-        var trace = Instantiate(netMuzzleFlashes[id].tracer, position, Quaternion.identity);
-        trace.GetComponent<Tracer>().target = hitPoint;
-        trace.GetComponent<Tracer>().muzzle = position;
-
-    }
 }
 [System.Serializable]
 public struct NetMuzzleFlash

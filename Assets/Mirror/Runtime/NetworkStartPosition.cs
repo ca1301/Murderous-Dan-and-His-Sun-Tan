@@ -20,5 +20,10 @@ namespace Mirror
         {
             NetworkManager.UnRegisterStartPosition(transform);
         }
+
+        private void OnDrawGizmos()
+        {
+            Gizmos.DrawCube(this.transform.position + Vector3.up * 1, new Vector3(0.3f, 2, 0.3f));
+        }
     }
 }
