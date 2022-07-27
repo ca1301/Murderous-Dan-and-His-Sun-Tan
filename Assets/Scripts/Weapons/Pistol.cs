@@ -7,6 +7,9 @@ public class Pistol : Weapon
 {
     public GameObject tracer;
 
+    
+
+
     public override void Update()
     {
         base.Update();

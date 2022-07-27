@@ -5,6 +5,8 @@ using Mirror;
 
 public class Weapon : NetworkBehaviour
 {
+    public RuntimeAnimatorController animController;
+
     public Camera cam;
     public LayerMask shootableLayers;
 

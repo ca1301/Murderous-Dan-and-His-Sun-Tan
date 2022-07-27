@@ -6,6 +6,7 @@ public class WeaponManager : NetworkBehaviour
 {
     public Weapon[] weapons;
     public TP_IK ik;
+    public Animator anim;
     // Start is called before the first frame update
     void Start()
     {
@@ -59,5 +60,9 @@ public class WeaponManager : NetworkBehaviour
         weapons[id].thirdPersonWeapon.gameObject.SetActive(true);
         weapons[id].gameObject.SetActive(true);
         ik.weapon = weapons[id];
+        if(isLocalPlayer)
+        {
+            anim.runtimeAnimatorController = weapons[id].animController;
+        }
     }
 }
