@@ -6,10 +6,19 @@ using Mirror;
 
 public class GameManager : NetworkBehaviour
 {
-
+    [Header("Game Settings")]
     public static GameManager Instance = null;
     private GameRoundManager gameRoundManager;
     public int maxRounds;
+
+    private int teamOneRoundsWon;
+    private int teamTwoRoundsWon;
+
+    private int currentRound;
+    private bool gameStarted;
+    private double startTime;
+
+
     [Header("Comsumables")]
     public List<Wearable> hats;
 
@@ -27,23 +36,24 @@ public class GameManager : NetworkBehaviour
     public Transform playerOneSpawnPosition;
     public Transform playerTwoSpawnPosition;
 
-
-
-    private int teamOneRoundsWon;
-    private int teamTwoRoundsWon;
-
     private NetworkPlayer playerOne;
     private NetworkPlayer playerTwo;
 
     private NetworkPlayer[] players;
-    private int currentRound;
-    private bool gameStarted;
-    private double startTime;
+
 
 
     void Awake()
     {
-        Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(this.gameObject);
+        }
+        //Initialize game settings
         roundStatus.text = "Waiting for players";
         currentRound = 1;
         gameRoundManager = GetComponent<GameRoundManager>();
@@ -51,6 +61,7 @@ public class GameManager : NetworkBehaviour
 
     public void StartGame()
     {
+        //Ensure that the server is the one sending game state to client
         if(isServer)
         {
             players = FindObjectsOfType<NetworkPlayer>();
@@ -65,6 +76,7 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     void RpcStartGame(double startTime)
     {
+        //Start game with current network time to ensure late joiners have the correct countdown timer
         gameStarted = true;
         StartCoroutine(gameRoundManager.PreGame(startTime));
     }
@@ -72,6 +84,7 @@ public class GameManager : NetworkBehaviour
     [Command(ignoreAuthority = true)]
     public void CmdPlayerDied(NetworkIdentity netId, int team)
     {
+        //Send to client(s) that a player died
         RpcPlayerDied(netId, team);
     }
 
@@ -80,6 +93,7 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     void RpcPlayerDied(NetworkIdentity netId, int team)
     {
+        //Client(s) receive message that player died
         if (team == 0)
         {
             teamTwoRoundsWon++;
@@ -90,26 +104,30 @@ public class GameManager : NetworkBehaviour
             teamOneRoundsWon++;
             netId.GetComponent<CharacterController>().transform.position = playerTwoSpawnPosition.position;
         }
+        //If the current round is the final one then end the game and not run the rest of the code
         if (currentRound == maxRounds)
         {
             GameEnd();
             return;
         }
+        //Setup game for next round and update UI
         RoundEnd();
         blueTeamScore.text = "" + teamOneRoundsWon;
         redTeamScore.text = "" + teamTwoRoundsWon;
     }
 
-
+    //When a player joins a game they request the current game state from the server
     [Command(ignoreAuthority = true)]
     public void CmdGetCurrentGameState()
     {
+        
         if (isServer)
         {
             RpcGetCurrentGameState(gameStarted, currentRound, startTime);
         }
     }
 
+    //Send the curent game state back to the client(s)
     [ClientRpc]
     public void RpcGetCurrentGameState(bool gameStarted, int currentRound, double startTime)
     {
@@ -124,6 +142,7 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    //Function to start the round called from GameRoundManager
     public void RoundStart()
     {
         if (isServer)
@@ -133,11 +152,13 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    //Inform the client(s) that the round has started
     [ClientRpc]
     void RpcStartRound(int currentRound, double startTime)
     {
         StartCoroutine(gameRoundManager.Round(currentRound, startTime));
     }
+    //Server end round
     public void RoundEnd()
     {
         if (isServer)
@@ -152,7 +173,7 @@ public class GameManager : NetworkBehaviour
             RpcStartPreRound(NetworkTime.time);
         }
     }
-
+    //Server end game
     public void GameEnd()
     {
         if (isServer)
@@ -163,7 +184,8 @@ public class GameManager : NetworkBehaviour
             RpcFinishGame();
         }
     }
-
+   
+    //Client(s) setup for the next round
     [ClientRpc]
     void RpcStartPreRound(double startTime)
     {
@@ -171,12 +193,14 @@ public class GameManager : NetworkBehaviour
         StartCoroutine(gameRoundManager.PreGame(startTime));
     }
 
+    //Inform client(s) that the game has finished
     [ClientRpc]
     void RpcFinishGame()
     {
         StartCoroutine(EndOfGameDisplay());
     }
 
+    //Show players who one and then load the menu scene
     IEnumerator EndOfGameDisplay()
     {
         if (teamOneRoundsWon > teamTwoRoundsWon)
@@ -194,6 +218,7 @@ public class GameManager : NetworkBehaviour
         NetworkManager.singleton.StopServer();
     }
 
+    //Display UI
     void ShowEndOfGameUI(int winningTeam)
     {
         gameOverScreen.SetActive(true);
@@ -206,10 +231,9 @@ public class GameManager : NetworkBehaviour
             gameOverScreenText.text = "Player 2 Won Congrats!";
         }
     }
-
+    //Start of round enable players so they can move
     public void EnablePlayers()
     {
-        Debug.LogError("Enable Players");
         if (isServer)
         {
             playerOne.RpcEnablePlayer();
@@ -217,9 +241,10 @@ public class GameManager : NetworkBehaviour
         }
 
     }
+
+    //End of round disable players so they can't move
     public void DisablePlayers()
     {
-        Debug.LogError("Disable Players");
         if (isServer)
         {
             playerOne.RpcDisablePlayer(playerOneSpawnPosition.position, playerOneSpawnPosition.rotation);

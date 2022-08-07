@@ -5,26 +5,24 @@ using Mirror;
 
 public class GameNetworkManager : NetworkManager
 {
-    public Transform playerOneSpawn;
-    public Transform playerTwoSpawn;
+    [SerializeField]
+    private Transform playerOneSpawn;
+    [SerializeField]
+    private Transform playerTwoSpawn;
+    [SerializeField]
+    private int minPlayersToStartGame = 2;
+
+    //Spawn new player in different position depending on player count
     public override void OnServerAddPlayer(NetworkConnection conn)
     {
         Transform start = numPlayers == 0 ? playerOneSpawn : playerTwoSpawn;
         GameObject player = Instantiate(playerPrefab, start.position, start.rotation);
         NetworkServer.AddPlayerForConnection(conn, player);
 
-        if(numPlayers == 2)
+        if(numPlayers == minPlayersToStartGame)
         {
             GameManager.Instance.StartGame();
         }
     }
 
-    public override void OnClientDisconnect(NetworkConnection conn)
-    {
-        base.OnClientDisconnect(conn);
-    }
-    public override void OnServerDisconnect(NetworkConnection conn)
-    {
-        base.OnServerDisconnect(conn);
-    }
 }

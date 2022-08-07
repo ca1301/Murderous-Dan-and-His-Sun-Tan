@@ -16,7 +16,7 @@ public class GameRoundManager : MonoBehaviour
 
 
 
-
+    //Handles the timer in between rounds
     public IEnumerator PreGame(double roundStartTime)
     {
         GameManager.Instance.DisablePlayers();
@@ -36,6 +36,7 @@ public class GameRoundManager : MonoBehaviour
         GameManager.Instance.RoundStart();
     }
 
+    //Handles the timer for game rounds
     public IEnumerator Round(int round, double roundStartTime)
     {
         GameManager.Instance.EnablePlayers();

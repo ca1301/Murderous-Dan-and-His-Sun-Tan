@@ -5,31 +5,34 @@ using TMPro;
 using Mirror;
 public class NetworkPlayer : NetworkBehaviour
 {
+    [Header("Player Setup")]
     public Behaviour[] behavioursToEnable;
-    public GameObject fp;
-    public float health = 100;
-    public Animator anim;
-
-    public Transform spine;
-    public Transform cam;
-    public Vector3 offset;
-
     public SkinnedMeshRenderer[] hideInFirstPerson;
     public MeshRenderer[] hideInFirstPersonMesh;
     public Collider[] hitBoxes;
-
+    public GameObject fp;
     public CameraLook camLook;
 
+
+    [Header("Player Stats")]
+    public float health = 100;
+    private int team;
+
+    [Header("Animation/IK")]
+    public Animator anim;
+    public Transform spine;
+    public Transform cam;
+    public Vector3 offset;
     private Quaternion netCamRotation;
     private Vector3 realPosition;
     private Quaternion realRotation;
-    private int team;
+
 
 
    
     void Start()
     {
-        
+        //If player is the local player enable/disable items
         if(netIdentity.isLocalPlayer)
         {
             foreach (var item in hideInFirstPerson)
@@ -48,9 +51,9 @@ public class NetworkPlayer : NetworkBehaviour
             {
                 item.enabled = false;
             }
-
             fp.SetActive(true);
 
+            //If is client then request the current game state
             if(!isServer)
             {
                 GameManager.Instance.CmdGetCurrentGameState();
@@ -58,7 +61,7 @@ public class NetworkPlayer : NetworkBehaviour
         }
         
     }
-
+    //IK spine/head player look
     public void LateUpdate()
     {
         spine.rotation = cam.rotation;
@@ -72,11 +75,15 @@ public class NetworkPlayer : NetworkBehaviour
         }
         
     }
+
+    //If player shot sent the damage to the server
     [Command(ignoreAuthority = true)]
     public void CmdApplyDamage(float amount)
     {
         RpcApplyDamage(amount);
     }
+
+    //Get the player shot message back from server
     [ClientRpc]
     public void RpcApplyDamage(float amount)
     {
@@ -87,12 +94,14 @@ public class NetworkPlayer : NetworkBehaviour
         }
     }
 
+    //Sent the players team to them
     [ClientRpc]
     public void RpcSetTeam(int teamID)
     {
         this.team = teamID;
     }
     
+    //Send the current players stats to everyone such as position and rotation
    void Update()
    {
         if (isLocalPlayer)
@@ -108,6 +117,7 @@ public class NetworkPlayer : NetworkBehaviour
         }
     }
 
+    //This is used to diasable the player inbetween rounds do they cannot run around
     [ClientRpc]
    public  void RpcDisablePlayer(Vector3 position, Quaternion rotation)
     {
@@ -116,12 +126,14 @@ public class NetworkPlayer : NetworkBehaviour
         DisablePlayer();
     }
 
+    //This is used to enable the player so that they can play during the rounds
     [ClientRpc]
     public void RpcEnablePlayer()
     {
         EnablePlayer();
     }
 
+    //
     public void DisablePlayer()
     {
         if (isLocalPlayer)
@@ -130,7 +142,6 @@ public class NetworkPlayer : NetworkBehaviour
             {
                 item.enabled = false;
             }
-            //fp.SetActive(false);
         }
         else
         {
