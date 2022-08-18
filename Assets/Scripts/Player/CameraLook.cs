@@ -22,8 +22,6 @@ public class CameraLook : MonoBehaviour
     {
         // Set target direction to the camera's initial orientation.
         targetDirection = transform.localRotation.eulerAngles;
-        sensitivity.x = PlayerPrefs.GetFloat("Sens");
-        sensitivity.y = PlayerPrefs.GetFloat("Sens");
         // Set target direction for the character body to its inital state.
         if (characterBody)
             targetCharacterDirection = characterBody.transform.localRotation.eulerAngles;

@@ -7,13 +7,13 @@ public class WeaponManager : NetworkBehaviour
     public Weapon[] weapons;
     public TP_IK ik;
     public Animator anim;
-    // Start is called before the first frame update
+
     void Start()
     {
         ik.weapon = weapons[0];
     }
 
-    // Update is called once per frame
+
     void Update()
     {
         if (isLocalPlayer)

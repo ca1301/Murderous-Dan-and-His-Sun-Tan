@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using Mirror;
+using Steamworks;
 public class NetworkPlayer : NetworkBehaviour
 {
     [Header("Player Setup")]
@@ -35,6 +36,17 @@ public class NetworkPlayer : NetworkBehaviour
         //If player is the local player enable/disable items
         if(netIdentity.isLocalPlayer)
         {
+            if(SteamManager.Initialized)
+            {
+                if(isServer)
+                {
+                    RpcChangeName(SteamFriends.GetPersonaName());
+                }
+                else
+                {
+                    CmdChangeName(SteamFriends.GetPersonaName());
+                }
+            }
             foreach (var item in hideInFirstPerson)
             {
                 item.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
@@ -60,6 +72,18 @@ public class NetworkPlayer : NetworkBehaviour
             }
         }
         
+    }
+
+    [Command]
+    void CmdChangeName(string playerName)
+    {
+        RpcChangeName(playerName); 
+    }
+
+    [ClientRpc]
+    void RpcChangeName(string playerName)
+    {
+        this.gameObject.name = playerName;
     }
     //IK spine/head player look
     public void LateUpdate()

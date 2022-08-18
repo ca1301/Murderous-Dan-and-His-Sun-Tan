@@ -15,7 +15,7 @@ public class GameNetworkManager : NetworkManager
     //Spawn new player in different position depending on player count
     public override void OnServerAddPlayer(NetworkConnection conn)
     {
-        Transform start = numPlayers == 0 ? playerOneSpawn : playerTwoSpawn;
+        Transform start = numPlayers == 0 ? playerTwoSpawn : playerOneSpawn;
         GameObject player = Instantiate(playerPrefab, start.position, start.rotation);
         NetworkServer.AddPlayerForConnection(conn, player);
 

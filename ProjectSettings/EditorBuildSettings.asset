@@ -5,16 +5,10 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Scenes/SteamLobby.unity
-    guid: b0a47cdf9d5ffe6448e282b0c9371040
   - enabled: 1
-    path: Assets/Scenes/WesternLevel.unity
-    guid: e2b07eca0e6e2064cb2a855716b6af44
-  - enabled: 0
-    path: Assets/Scenes/TestLevel.unity
-    guid: 0e0e7d1032e63554796f9edc2c484eb8
-  - enabled: 0
     path: Assets/Scenes/Menu.unity
     guid: badbc401bd240ad4f8108c284e2e5253
+  - enabled: 1
+    path: Assets/Scenes/SteamGame.unity
+    guid: fa63f1b634969184eba064ae25d821ba
   m_configObjects: {}

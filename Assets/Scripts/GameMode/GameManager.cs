@@ -27,7 +27,9 @@ public class GameManager : NetworkBehaviour
     public TMP_Text roundTime;
 
     public TMP_Text blueTeamScore;
+    public TMP_Text bluePlayerNameText;
     public TMP_Text redTeamScore;
+    public TMP_Text redPlayerNameText;
 
     public GameObject gameOverScreen;
     public TMP_Text gameOverScreenText;
@@ -55,6 +57,7 @@ public class GameManager : NetworkBehaviour
         }
         //Initialize game settings
         roundStatus.text = "Waiting for players";
+        roundTime.text = "Highest score after " + maxRounds.ToString() + " rounds wins";
         currentRound = 1;
         gameRoundManager = GetComponent<GameRoundManager>();
     }
@@ -79,6 +82,13 @@ public class GameManager : NetworkBehaviour
         //Start game with current network time to ensure late joiners have the correct countdown timer
         gameStarted = true;
         StartCoroutine(gameRoundManager.PreGame(startTime));
+    }
+
+    [ClientRpc]
+    void RpcSetNames(string playerOne, string playerTwo)
+    {
+        bluePlayerNameText.text = playerOne;
+        redPlayerNameText.text = playerTwo;
     }
 
     [Command(ignoreAuthority = true)]
@@ -120,7 +130,6 @@ public class GameManager : NetworkBehaviour
     [Command(ignoreAuthority = true)]
     public void CmdGetCurrentGameState()
     {
-        
         if (isServer)
         {
             RpcGetCurrentGameState(gameStarted, currentRound, startTime);
@@ -147,6 +156,7 @@ public class GameManager : NetworkBehaviour
     {
         if (isServer)
         {
+            RpcSetNames(playerOne.name, playerTwo.name);
             startTime = NetworkTime.time;
             RpcStartRound(currentRound, startTime);
         }
