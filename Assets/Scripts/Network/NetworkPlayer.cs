@@ -4,6 +4,7 @@ using UnityEngine;
 using TMPro;
 using Mirror;
 using Steamworks;
+using UnityEngine.UI;
 public class NetworkPlayer : NetworkBehaviour
 {
     [Header("Player Setup")]
@@ -13,12 +14,14 @@ public class NetworkPlayer : NetworkBehaviour
     public Collider[] hitBoxes;
     public GameObject fp;
     public CameraLook camLook;
-
+    public SkinnedMeshRenderer[] hideShadowsInFirstPerson;
+    public MeshRenderer[] hideShadowsInFirstPersonMesh;
 
     [Header("Player Stats")]
     public float health = 100;
     private int team;
-
+    private bool playerDead = false;
+    public Slider healthSlider;
     [Header("Animation/IK")]
     public Animator anim;
     public Transform spine;
@@ -33,8 +36,12 @@ public class NetworkPlayer : NetworkBehaviour
    
     void Start()
     {
+        foreach (var item in hitBoxes)
+        {
+            item.GetComponent<Rigidbody>().isKinematic = true;
+        }
         //If player is the local player enable/disable items
-        if(netIdentity.isLocalPlayer)
+        if (netIdentity.isLocalPlayer)
         {
             if(SteamManager.Initialized)
             {
@@ -55,6 +62,16 @@ public class NetworkPlayer : NetworkBehaviour
             {
                 item.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
             }
+
+            foreach (var item in hideShadowsInFirstPerson)
+            {
+                item.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            foreach (var item in hideShadowsInFirstPersonMesh)
+            {
+                item.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+
             foreach (Behaviour behaviour in behavioursToEnable)
             {
                 behaviour.enabled = true;
@@ -112,7 +129,8 @@ public class NetworkPlayer : NetworkBehaviour
     public void RpcApplyDamage(float amount)
     {
         health -= amount;
-        if(health <= 0)
+        healthSlider.value = health;
+        if(health <= 0 && !playerDead)
         {
             ResetPlayer();
         }
@@ -154,6 +172,7 @@ public class NetworkPlayer : NetworkBehaviour
     [ClientRpc]
     public void RpcEnablePlayer()
     {
+        playerDead = false;
         EnablePlayer();
     }
 
@@ -217,6 +236,8 @@ public class NetworkPlayer : NetworkBehaviour
     public void EnablePlayer()
     {
         health = 100;
+        healthSlider.value = 100;
+        playerDead = false;
         if (isLocalPlayer)
         {
             foreach (var item in behavioursToEnable)

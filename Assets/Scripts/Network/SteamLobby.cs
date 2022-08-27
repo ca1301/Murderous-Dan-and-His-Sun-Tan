@@ -25,6 +25,8 @@ public class SteamLobby : MonoBehaviour
     private GameNetworkManager networkManager;
 
     private const string HostAddressKey = "HostAddress";
+
+    public CSteamID currentLobby;
     // Start is called before the first frame update
     void Start()
     {
@@ -108,6 +110,7 @@ public class SteamLobby : MonoBehaviour
 
     private void OnLobbyEntered(LobbyEnter_t callback)
     {
+        currentLobby = new CSteamID(callback.m_ulSteamIDLobby);
         if (NetworkServer.active) { return; }
 
         string hostAddress = SteamMatchmaking.GetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), HostAddressKey);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using Mirror;
+using Steamworks;
 
 public class GameManager : NetworkBehaviour
 {
@@ -191,7 +192,7 @@ public class GameManager : NetworkBehaviour
             playerOne.RpcDisablePlayer(playerOneSpawnPosition.position, playerOneSpawnPosition.rotation);
             playerTwo.RpcDisablePlayer(playerTwoSpawnPosition.position, playerTwoSpawnPosition.rotation);
             StopAllCoroutines();
-            RpcFinishGame();
+            RpcFinishGame(playerOne.gameObject.name, playerTwo.gameObject.name);
         }
     }
    
@@ -205,41 +206,41 @@ public class GameManager : NetworkBehaviour
 
     //Inform client(s) that the game has finished
     [ClientRpc]
-    void RpcFinishGame()
+    void RpcFinishGame(string playerOneName, string playerTwoName)
     {
-        StartCoroutine(EndOfGameDisplay());
+        StartCoroutine(EndOfGameDisplay(playerOneName, playerTwoName));
     }
 
     //Show players who one and then load the menu scene
-    IEnumerator EndOfGameDisplay()
+    IEnumerator EndOfGameDisplay(string playerOneName, string playerTwoName)
     {
         if (teamOneRoundsWon > teamTwoRoundsWon)
         {
-            ShowEndOfGameUI(0);
+            ShowEndOfGameUI(playerOneName);
         }
         else if(teamOneRoundsWon < teamTwoRoundsWon)
         {
-            ShowEndOfGameUI(1);
+            ShowEndOfGameUI(playerTwoName);
         }
         yield return new WaitForSeconds(5);
         Cursor.lockState = CursorLockMode.None;
         NetworkManager.singleton.ServerChangeScene(NetworkManager.singleton.offlineScene);
         NetworkManager.singleton.StopHost();
         NetworkManager.singleton.StopServer();
+        NetworkServer.DisconnectAll();
+        CSteamID lobbyID = FindObjectOfType<SteamLobby>().currentLobby;
+        if (lobbyID != null)
+        {
+            Debug.LogError("Leaving Lobby");
+            SteamMatchmaking.LeaveLobby(lobbyID);
+        }
     }
 
     //Display UI
-    void ShowEndOfGameUI(int winningTeam)
+    void ShowEndOfGameUI(string winningPlayer)
     {
         gameOverScreen.SetActive(true);
-        if (winningTeam == 0)
-        {
-            gameOverScreenText.text = "Player 1 Won Congrats!";
-        }
-        else
-        {
-            gameOverScreenText.text = "Player 2 Won Congrats!";
-        }
+        gameOverScreenText.text = winningPlayer + " Won Congrats!";
     }
     //Start of round enable players so they can move
     public void EnablePlayers()

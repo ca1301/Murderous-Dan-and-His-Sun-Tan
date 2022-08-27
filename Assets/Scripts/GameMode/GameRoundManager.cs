@@ -11,7 +11,7 @@ public class GameRoundManager : MonoBehaviour
 
     [Tooltip("Round time (in seconds)")]
     [SerializeField]
-    private float roundTime = 1000;
+    private float roundTime = 90;
 
 
 
