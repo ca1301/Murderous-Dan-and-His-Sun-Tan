@@ -7,7 +7,7 @@ public class Pistol : Weapon
 {
     public GameObject tracer;
 
-    
+    public Animator animator;
 
 
     public override void Update()
@@ -17,6 +17,7 @@ public class Pistol : Weapon
         { 
             Shoot();
         }
+        animator.SetFloat("Speed", GetComponentInParent<AdvancedPlayerMovement>().move.magnitude);
     }
 
     void Shoot()
@@ -38,7 +39,7 @@ public class Pistol : Weapon
         {
             hitPoint = cam.transform.forward * range;
         }
-
+        animator.Play("Base Layer.Fire", 0, 0.1f);
         var trace = Instantiate(tracer, fpMuzzle.position, fpMuzzle.rotation);
         trace.GetComponent<Tracer>().target = hitPoint;
         if (isServer)

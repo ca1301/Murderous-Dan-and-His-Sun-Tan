@@ -24,6 +24,8 @@ public class AdvancedPlayerMovement : MonoBehaviour
     private bool playerGrounded;
     private bool running;
     private bool crouching;
+    [HideInInspector]
+    public Vector3 move;
     // Start is called before the first frame update
     void Start()
     {
@@ -70,7 +72,7 @@ public class AdvancedPlayerMovement : MonoBehaviour
 
 
 
-        Vector3 move = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical")).normalized;
+        move = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical")).normalized;
         anim.SetBool("Crouching", crouching);
         anim.SetFloat("Horizontal", move.x);
         anim.SetFloat("Vertical", move.z);
