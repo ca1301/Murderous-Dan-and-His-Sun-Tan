@@ -16,6 +16,8 @@ public class SteamLobby : MonoBehaviour
 
 
     public TMP_Dropdown dropDown;
+    public TMP_Text playerStatusText;
+    public Color connectedStatusColour;
     public ELobbyType lobbyType;
 
     public List<GameObject> joinLobbyButtons = new List<GameObject>();
@@ -31,6 +33,8 @@ public class SteamLobby : MonoBehaviour
     void Start()
     {
         networkManager = GetComponent<GameNetworkManager>();
+        playerStatusText.text = "Disconnected";
+        playerStatusText.color = Color.red;
         if (!SteamManager.Initialized)
             return;
 
@@ -40,6 +44,8 @@ public class SteamLobby : MonoBehaviour
 
         lobbyMatchListCallback = Callback<LobbyMatchList_t>.Create(OnLobbyMatchList);
         lobbyDataUpdateCallback = Callback<LobbyDataUpdate_t>.Create(OnLobbyDataUpdate);
+        playerStatusText.text = SteamFriends.GetPersonaName();
+        playerStatusText.color = connectedStatusColour;
     }
 
     public void HostLobby()
